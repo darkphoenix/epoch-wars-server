@@ -15,6 +15,16 @@ class InvalidBuildException(MapException):
     def __str__(self):
         return self.message
 
+class InvalidExcavateException(MapException):
+    pos = None
+
+    def __init__(self, pos, message):
+        self.pos = pos
+        self.message = message
+
+    def __str__(self):
+        return self.message
+
 class Building(Enum):
     HOUSE = 0
     VILLA = 1
@@ -66,18 +76,39 @@ class PlayerMap():
         for row in self.fields:
             print(*map(str, row), sep='')
 
+    def __str__(self):
+        res = ''
+        for row in self.fields:
+            res += ''.join(map(str, row)) + ';'
+        return res
+
     def build(self, pos, building):
         if building == Building.VILLA:
             if (pos[0] >= self.size[0] - 1) or (pos[0] < 1) or (pos[1] >= self.size[1] - 1) or (pos[1] < 1):
                 raise InvalidBuildException(pos, building, 'Out of bounds.')
-        else:
-            if (pos[0] >= self.size[0]) or (pos[0] < 0) or (pos[1] >= self.size[1]) or (pos[1] < 0):
-                raise InvalidBuildException(pos, building, 'Out of bounds.')
-        if self.fields[pos[0]][pos[1]].blocked:
-            raise InvalidBuildException(pos, building, 'Field blocked.')
-        self.fields[pos[0]][pos[1]].building = building
-        self.fields[pos[0]][pos[1]].blocked = True
-        if building == Building.VILLA:
+            for x in [-1, 0, 1]:
+                for y in [-1, 0, 1]:
+                    if self.fields[pos[0] + x][pos[1] + y].blocked:
+                        if self.fields[pos[0]][pos[1]].blocked:
+                            raise InvalidBuildException(pos, building, 'Field blocked.')
             for x in [-1, 0, 1]:
                 for y in [-1, 0, 1]:
                     self.fields[pos[0] + x][pos[1] + y].blocked = True
+        else:
+            if (pos[0] >= self.size[0]) or (pos[0] < 0) or (pos[1] >= self.size[1]) or (pos[1] < 0):
+                raise InvalidBuildException(pos, building, 'Out of bounds.')
+            if self.fields[pos[0]][pos[1]].blocked:
+                raise InvalidBuildException(pos, building, 'Field blocked.')
+            self.fields[pos[0]][pos[1]].blocked = True
+        self.fields[pos[0]][pos[1]].building = building
+
+    def excavate(self, pos):
+        if (pos[0] >= self.size[0]) or (pos[0] < 0) or (pos[1] >= self.size[1]) or (pos[1] < 0):
+            raise InvalidExcavateException(pos, 'Out of bounds.')
+        res = self.fields[pos[0]][pos[1]]
+        for x in [-1, 0, 1]:
+            for y in [-1, 0, 1]:
+                f = self.fields[pos[0] + x][pos[1] + y]
+                if f.building == Building.VILLA:
+                    res = f
+        return res
