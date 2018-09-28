@@ -1,5 +1,6 @@
 import json
 from turn import Turn
+from map import PlayerMap, Building, Field
 
 class Player:
     def __init__(self, connection):
@@ -19,7 +20,7 @@ class Player:
                     self.waiting_for_excavate = (command['x'], command['y'])
 
                 elif command['type'] == 'build':
-                    #Build
+                    self.map.build((command['x'], command['y']), Building.HOUSE)
                     Turn.wait_for_end()
                     if self.waiting_for_excavate[0] != -1:
                         self.conn.writeline(json.dumps({'type':'excavate', 'res': 'Feld ' \
@@ -27,6 +28,9 @@ class Player:
                         self.conn.write("\n")
                         self.conn.flush()
 
+            except InvalidBuildException as error:
+                self.conn.write('{"err":"' + str(error) + '"}\n')
+                self.conn.flush()
             except Exception as error:
                 print(error)
                 self.conn.write('{"err":"Invalid JSON"}\n')
