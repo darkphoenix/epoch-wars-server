@@ -3,12 +3,12 @@ from turn import Turn
 from map import PlayerMap, Building, Field
 
 class Player:
-    def __init__(self, connection):
+    def __init__(self, connection, map_size):
         self.sock = connection
         self.conn = self.sock.makefile(mode='rw')
         Turn.players += 1
 
-        self.map = [[0] * 5 for i in range(5)]
+        self.map = PlayerMap(map_size)
         self.waiting_for_excavate = (-1, -1)
 
     def handleForever(self):
@@ -20,8 +20,12 @@ class Player:
                     self.waiting_for_excavate = (command['x'], command['y'])
 
                 elif command['type'] == 'build':
-                    self.map.build((command['x'], command['y']), Building.HOUSE)
+                    if command['building'] == "tower":
+                        pass
+                    else:
+                        self.map.build((command['x'], command['y']), Building[command['building'].upper()])
                     Turn.wait_for_end()
+                    self.conn.write(str(self.map))
                     if self.waiting_for_excavate[0] != -1:
                         self.conn.writeline(json.dumps({'type':'excavate', 'res': 'Feld ' \
                         + str(self.waiting_for_excavate[0]) + ', ' + str(self.waiting_for_excavate[1]) + ' hat nichts.'}))
@@ -30,6 +34,9 @@ class Player:
 
             except InvalidBuildException as error:
                 self.conn.write('{"err":"' + str(error) + '"}\n')
+                self.conn.flush()
+            except KeyError:
+                self.conn.write('{"err":"Invalid building type"}\n')
                 self.conn.flush()
             except Exception as error:
                 print(error)

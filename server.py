@@ -5,10 +5,11 @@ import threading
 from player import Player
 
 players = []
+map_size = (10,10)
 
 def addPlayer(conn):
     print("Player joined!")
-    player = Player(conn)
+    player = Player(conn, map_size)
     players.append(player)
     player.handleForever()
 
