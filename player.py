@@ -1,6 +1,6 @@
 import json
 from turn import Turn
-from map import PlayerMap, Building, Field
+from map import *
 
 class Player:
     def __init__(self, connection, map_size):
@@ -26,6 +26,8 @@ class Player:
                         self.map.build((command['x'], command['y']), Building[command['building'].upper()])
                     Turn.wait_for_end()
                     self.conn.write(str(self.map))
+                    self.conn.write("\n")
+                    self.conn.flush()
                     if self.waiting_for_excavate[0] != -1:
                         self.conn.writeline(json.dumps({'type':'excavate', 'res': 'Feld ' \
                         + str(self.waiting_for_excavate[0]) + ', ' + str(self.waiting_for_excavate[1]) + ' hat nichts.'}))
