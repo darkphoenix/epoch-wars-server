@@ -7,7 +7,7 @@ from random import randint
 import subprocess
 
 def getPort():
-    port = randint(42000, 42500)
+    port = randint(42000, 42100)
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
