@@ -5,19 +5,19 @@ import threading
 from player import Player
 from queue import Queue, Empty
 from message import *
+import copy
 
 players = []
 map_size = (10,10)
 
 def addPlayer(conn, num, q):
-    print("Player joined!")
+    print("Player %d joined!" % num)
     player = Player(conn, num, map_size, q)
     players.append(player)
     player.handleForever()
 
 def mainThread(q):
     msg = q.get()
-    print(msg)
     if isinstance(msg, TowerMessage):
         for p in players:
             if p.number != msg.player:

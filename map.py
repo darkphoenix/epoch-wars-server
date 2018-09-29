@@ -22,8 +22,6 @@ class InvalidBuildException(MapException):
         return self.message
 
 class InvalidExcavateException(MapException):
-    pos = None
-
     def __init__(self, pos, message):
         self.pos = pos
         self.message = message
@@ -91,11 +89,8 @@ class Field():
 
 
 class PlayerMap():
-    size = (0, 0)
-    buildings = {}
-
     def __init__(self, size=(10, 10)):
-        self.fields = []
+        self.buildings = {}
         self.size = size
 
     def display(self):
@@ -115,6 +110,7 @@ class PlayerMap():
         return res
 
     def build(self, pos, building):
+        print(pos, building)
         if any([(pos[i] < building.radius) or (pos[i] >= self.size[i] - building.radius) for i in [0, 1]]):
             raise InvalidBuildException(pos, building, 'Out of bounds.')
         for p, b in self.buildings.items():
@@ -132,3 +128,14 @@ class PlayerMap():
             if all([abs(p[i] - pos[i]) == 0 for i in [0,1]]):
                 res.building = b
         return res
+
+    def tower(self, pos):
+        if any([(pos[i] >= self.size[i]) or (pos[i] < 0) for i in [0, 1]]):
+            raise InvalidBuildException(pos, Tower(), 'Out of bounds.')
+        remove = []
+        for p, b in self.buildings.items():
+            if all([abs(p[i] - pos[i]) <= b.radius for i in [0,1]]):
+                remove.append(p)
+        for p in remove:
+            del self.buildings[p]
+        self.build(pos, Tower())

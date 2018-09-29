@@ -15,7 +15,7 @@ class Player:
         self.waiting_for_excavate = (-1, -1)
 
     def tower(self, pos):
-        print(pos)
+        self.map.tower(pos)
 
     def handleForever(self):
         while True:
