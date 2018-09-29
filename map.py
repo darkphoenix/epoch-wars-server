@@ -1,4 +1,5 @@
 from enum import Enum
+import json
 
 class MapException(Exception):
     pass
@@ -108,8 +109,14 @@ class PlayerMap():
         for pos, building in self.buildings.items():
             fields = building.place(fields, pos)
         for row in fields:
-            res += ''.join(map(str, row)) + ';'
+            res += ''.join(map(str, row)) + '\n'
         return res
+    
+    def json(self):
+        res = []
+        for p, b in self.buildings.items():
+            res.append({'x': p[0], 'y': p[1], 'building': type(b).__name__.lower()})
+        return json.dumps(res)
 
     def build(self, pos, building):
         if any([(pos[i] < building.radius) or (pos[i] >= self.size[i] - building.radius) for i in [0, 1]]):

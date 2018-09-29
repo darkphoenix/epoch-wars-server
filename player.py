@@ -60,7 +60,10 @@ class Player:
         logging.debug("Current score for player " + str(self.number) + ": " + str(self.points))
         self.map.apply()
         self.turn_over = False
-        self.conn.write(str(self.map))
+        self.conn.write(self.map.json())
+        self.conn.write("\n")
+        map_mes = {"type":"debug", "message":str(self.map)}
+        self.conn.write(json.dumps(map_mes))
         self.conn.write("\n")
         self.conn.flush()
         if self.waiting_for_excavate[0] != -1:
