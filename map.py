@@ -116,7 +116,7 @@ class PlayerMap():
         res = []
         for p, b in self.buildings.items():
             res.append({'x': p[0], 'y': p[1], 'building': type(b).__name__.lower()})
-        return json.dumps(res)
+        return res
 
     def build(self, pos, building):
         if any([(pos[i] < building.radius) or (pos[i] >= self.size[i] - building.radius) for i in [0, 1]]):

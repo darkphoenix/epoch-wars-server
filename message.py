@@ -14,7 +14,12 @@ class PosMessage(Message):
         return type(self).__name__ + "(" + str(self.player) + ", " + str(self.pos) + ")"
 
 class FinishTurnMessage(Message):
-    pass
+    def __init__(self, player, score):
+        self.player = player
+        self.score = score
+    
+    def __str__(self):
+        return type(self).__name__ + "(" + str(self.player) + ", " + str(self.score) + ")"
 
 class TowerMessage(PosMessage):
     pass

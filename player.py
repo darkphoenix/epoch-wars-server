@@ -20,6 +20,9 @@ class Player:
         self.map.tower(pos)
 
     def handleForever(self):
+        self.conn.write(json.dumps({'type': 'welcome','player': self.number}))
+        self.conn.write("\n")
+        self.conn.flush()
         while True:
             try:
                 command = json.loads(self.conn.readline())
@@ -35,7 +38,8 @@ class Player:
                     else:
                         logging.debug("Player " + str(self.number) + " built a " + command['building'] + " on field (" + str(command['x']) + ", " + str(command['y']) + ")")
                         self.map.build((command['x'], command['y']), Building.new(command['building']))
-                    self.q.put(FinishTurnMessage(self.number))
+                    self.points += self.map.points()
+                    self.q.put(FinishTurnMessage(self.number, self.points))
                     self.turn_over = True
                 elif self.turn_over:
                     self.conn.write('{"type":"error", "message":"Build action already made this turn"}\n')
@@ -55,13 +59,15 @@ class Player:
                 self.conn.write('{"type":"error", "message":"Invalid JSON"}\n')
                 self.conn.flush()
 
-    def endTurn(self):
-        self.points += self.map.points()
+    def endTurn(self, scores):
         logging.debug("Current score for player " + str(self.number) + ": " + str(self.points))
         self.map.apply()
         self.turn_over = False
-        self.conn.write(self.map.json())
+
+        result_message = {"type":"end_of_turn", "scores": scores, "map": self.map.json()}
+        self.conn.write(json.dumps(result_message))
         self.conn.write("\n")
+
         map_mes = {"type":"debug", "message":str(self.map)}
         self.conn.write(json.dumps(map_mes))
         self.conn.write("\n")

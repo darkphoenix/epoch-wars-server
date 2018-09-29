@@ -20,7 +20,7 @@ def addPlayer(conn, num, q):
     player.handleForever()
 
 def mainThread(q):
-    finished_players = 0
+    finished_players = []
     while True:
         msg = q.get()
         logging.debug("Got message: " + str(msg))
@@ -29,11 +29,14 @@ def mainThread(q):
                 if p.number != msg.player:
                     p.tower(msg.pos)
         elif isinstance(msg, FinishTurnMessage):
-            finished_players += 1
-            if finished_players == len(players):
-                finished_players = 0
+            finished_players.append((msg.player, msg.score))
+            if len(finished_players) == len(players):
+                scores = [0] * len(players)
+                for p in finished_players:
+                    scores[p[0]] = p[1]
+                finished_players = []
                 for p in players:
-                    p.endTurn()
+                    p.endTurn(scores)
 
 if __name__ == "__main__":
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
