@@ -31,6 +31,7 @@ class InvalidExcavateException(MapException):
         return self.message
 
 class Building():
+    base_price = 0
     radius = 0
     points = 0
 
@@ -50,14 +51,23 @@ class Building():
         fields[pos[0]][pos[1]].building = self
         return fields
 
+    def get_price(self, count):
+        def fib(n):
+            if n < 2:
+                return 1
+            return fib(n-2) + fib(n-1)
+        return fib(count)*self.base_price - 1
+
 class House(Building):
     points = 1
+    base_price = 1
 
     def __str__(self):
         return '🏠'
 
 class Villa(Building):
     radius = 1
+    base_price = 9
     points = 9
 
     def __str__(self):

@@ -38,11 +38,14 @@ def handleConnection(conn):
             player.handleForever()
         elif client_welcome['type'] == 'rejoin':
             sock.close()
-            logging.debug("Player %d rejoined with a new connection!" %tokens[client_welcome['token']].number)
-            tokens[client_welcome['token']].sock = conn
-            tokens[client_welcome['token']].conn = conn.makefile(mode='rw')
-            tokens[client_welcome['token']].sendWelcome()
-            tokens[client_welcome['token']].endTurn({})
+            if client_welcome['token'] in tokens:
+                logging.debug("Player %d rejoined with a new connection!" %tokens[client_welcome['token']].number)
+                tokens[client_welcome['token']].sock = conn
+                tokens[client_welcome['token']].conn = conn.makefile(mode='rw')
+                tokens[client_welcome['token']].sendWelcome()
+                tokens[client_welcome['token']].endTurn({})
+            else:
+                conn.close()
         elif turn_counter > 0:
             sock.write(json.dumps({'type': 'error', 'message': 'The game is already running'}))
             sock.write("\n")
@@ -55,6 +58,7 @@ def handleConnection(conn):
 def mainThread(q):
     global turn_counter
     finished_players = {}
+    scores = []
     while True:
         msg = q.get()
         logging.debug("Got message: " + str(msg))
@@ -71,12 +75,16 @@ def mainThread(q):
                     players[msg.player].excavate_result = {'depth': p - msg.player, 'building': match, 'pos': msg.pos}
                     break
         elif isinstance(msg, FinishTurnMessage):
+            if len(players) > len(scores):
+                scores.extend([None]*(len(players)-len(scores)))
             finished_players[players[msg.player].name] = msg.score
+            scores[msg.player] = {'name': players[msg.player].name, 'score': msg.score}
             if len(finished_players) == len(players):
                 turn_counter += 1
                 for p in players:
-                    p.endTurn(finished_players)
+                    p.endTurn(scores)
                 finished_players = {}
+                scores = [0] * len(players)
 
 if __name__ == "__main__":
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

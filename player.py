@@ -45,8 +45,14 @@ class Player:
                         self.map.build((command['x'], command['y']), Building.new(command['building']))
                         self.q.put(TowerMessage(self.number, (command['x'], command['y'])))
                     else:
-                        logging.debug("Player " + str(self.number) + " built a " + command['building'] + " on field (" + str(command['x']) + ", " + str(command['y']) + ")")
                         self.map.build((command['x'], command['y']), Building.new(command['building']))
+                        building_count = len(list(filter(lambda x: type(x).__name__.lower() == command['building'].lower(), self.map.buildings.values())))
+                        self.points -= Building.new(command['building']).get_price(building_count)
+                        logging.debug("Player " + str(self.number) + " built a " + command['building'] + " on field (" + str(command['x']) + ", " + str(command['y']) + ")")
+                    self.points += self.map.points()
+                    self.q.put(FinishTurnMessage(self.number, self.points))
+                    self.turn_over = True
+                elif command['type'] == 'end_turn':
                     self.points += self.map.points()
                     self.q.put(FinishTurnMessage(self.number, self.points))
                     self.turn_over = True
@@ -64,11 +70,15 @@ class Player:
                 self.conn.write('{"type":"error", "message":"Invalid building type '+ error.name + '"}\n')
                 self.conn.flush()
             except ValueError:
-                pass
+                try:
+                    self.conn.write('{"type":"error", "message":"Invalid JSON"}\n')
+                    self.conn.flush()
+                except:
+                    pass
             except Exception as error:
                 logging.error(error)
                 try:
-                    self.conn.write('{"type":"error", "message":"Invalid JSON"}\n')
+                    self.conn.write('{"type":"error", "message":"Internal server error"}\n')
                     self.conn.flush()
                 except:
                     pass
