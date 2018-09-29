@@ -12,7 +12,6 @@ logging.basicConfig(level=logging.DEBUG)
 
 players = []
 map_size = (10,10)
-finished_players = 0
 
 def addPlayer(conn, num, q):
     logging.info("Player %d joined!" % num)
@@ -21,6 +20,7 @@ def addPlayer(conn, num, q):
     player.handleForever()
 
 def mainThread(q):
+    finished_players = 0
     while True:
         msg = q.get()
         logging.debug("Got message: " + str(msg))
@@ -29,7 +29,7 @@ def mainThread(q):
                 if p.number != msg.player:
                     p.tower(msg.pos)
         elif isinstance(msg, FinishTurnMessage):
-            finished_player += 1
+            finished_players += 1
             if finished_players == len(players):
                 finished_players = 0
                 for p in players:

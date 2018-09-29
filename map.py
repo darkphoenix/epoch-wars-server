@@ -91,6 +91,8 @@ class Field():
 class PlayerMap():
     def __init__(self, size=(10, 10)):
         self.buildings = {}
+        self.turn_buildings = []
+        self.turn_towers = []
         self.size = size
 
     def display(self):
@@ -115,7 +117,7 @@ class PlayerMap():
         for p, b in self.buildings.items():
             if all([abs(p[i] - pos[i]) <= (building.radius + b.radius) for i in [0,1]]):
                 raise InvalidBuildException(pos, building, 'Field blocked.')
-        self.buildings[pos] = building
+        self.turn_buildings.append((pos, building))
 
     def excavate(self, pos):
         if any([(pos[i] >= self.size[i]) or (pos[i] < 0) for i in [0, 1]]):
@@ -131,13 +133,21 @@ class PlayerMap():
     def tower(self, pos):
         if any([(pos[i] >= self.size[i]) or (pos[i] < 0) for i in [0, 1]]):
             raise InvalidBuildException(pos, Tower(), 'Out of bounds.')
-        remove = []
-        for p, b in self.buildings.items():
-            if all([abs(p[i] - pos[i]) <= b.radius for i in [0,1]]):
-                remove.append(p)
-        for p in remove:
-            del self.buildings[p]
-        self.build(pos, Tower())
+        self.turn_towers.append(pos)
+
+    def apply(self):
+        for b in self.turn_buildings:
+            self.buildings[b[0]] = b[1]
+        self.turn_buildings = []
+        for pos in self.turn_towers:
+            remove = []
+            for p, b in self.buildings.items():
+                if all([abs(p[i] - pos[i]) <= b.radius for i in [0,1]]):
+                    remove.append(p)
+            for p in remove:
+                del self.buildings[p]
+            self.buildings[pos] = Tower()
+        self.turn_towers = []
 
     def points(self):
         return sum(map(lambda x: x.points, self.buildings.values()))
