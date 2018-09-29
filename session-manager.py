@@ -21,10 +21,13 @@ if __name__ == '__main__':
             subprocess.Popen(["./server.py", str(port)])
             for conn in waitlist:
                 conn.sendall(("10.42.0.146:" + str(port) + "\n").encode('utf-8'))
-            for conn in waitlist:
+            while len(waitlist) > 0:
+                conn = waitlist.pop()
                 try:
                     conn.shutdown(socket.SHUT_RDWR)
+                except:
+                    pass
+                try:
                     conn.close()
                 except:
                     pass
-                waitlist.remove(conn)
