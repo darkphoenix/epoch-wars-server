@@ -23,7 +23,7 @@ class Player:
                     if command['building'] == "tower":
                         pass
                     else:
-                        self.map.build((command['x'], command['y']), Building[command['building'].upper()])
+                        self.map.build((command['x'], command['y']), Building.new(command['building']))
                     Turn.wait_for_end()
                     self.conn.write(str(self.map))
                     self.conn.write("\n")
@@ -37,8 +37,8 @@ class Player:
             except InvalidBuildException as error:
                 self.conn.write('{"err":"' + str(error) + '"}\n')
                 self.conn.flush()
-            except KeyError:
-                self.conn.write('{"err":"Invalid building type"}\n')
+            except UnknownBuildingException as error:
+                self.conn.write('{"err":"Invalid building type '+ error.name + '"}\n')
                 self.conn.flush()
             except Exception as error:
                 print(error)
