@@ -6,22 +6,34 @@ from player import Player
 from queue import Queue, Empty
 from message import *
 import copy
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
 
 players = []
 map_size = (10,10)
+finished_players = 0
 
 def addPlayer(conn, num, q):
-    print("Player %d joined!" % num)
+    logging.info("Player %d joined!" % num)
     player = Player(conn, num, map_size, q)
     players.append(player)
     player.handleForever()
 
 def mainThread(q):
-    msg = q.get()
-    if isinstance(msg, TowerMessage):
-        for p in players:
-            if p.number != msg.player:
-                p.tower(msg.pos)
+    while True:
+        msg = q.get()
+        logging.debug("Got message: " + str(msg))
+        if isinstance(msg, TowerMessage):
+            for p in players:
+                if p.number != msg.player:
+                    p.tower(msg.pos)
+        elif isinstance(msg, FinishTurnMessage):
+            finished_player += 1
+            if finished_players == len(players):
+                finished_players = 0
+                for p in players:
+                    p.endTurn()
 
 if __name__ == "__main__":
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

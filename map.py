@@ -110,7 +110,6 @@ class PlayerMap():
         return res
 
     def build(self, pos, building):
-        print(pos, building)
         if any([(pos[i] < building.radius) or (pos[i] >= self.size[i] - building.radius) for i in [0, 1]]):
             raise InvalidBuildException(pos, building, 'Out of bounds.')
         for p, b in self.buildings.items():
