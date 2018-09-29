@@ -5,7 +5,7 @@ from time import sleep
 import logging
 
 class Player:
-    def __init__(self, connection, number, map_size, q, token):
+    def __init__(self, connection, number, map_size, q, token, name):
         self.points = 0
         self.q = q
         self.number = number
@@ -14,6 +14,7 @@ class Player:
         self.turn_over = False
         self.excavate_result = None
         self.size = map_size
+        self.name = name
 
         self.map = PlayerMap(map_size)
         self.conn.write(json.dumps({'type': 'welcome','player': self.number, 'map_size': map_size, 'rejoin': token}))
@@ -77,7 +78,7 @@ class Player:
 
         self.excavate_result = None
 
-        map_mes = {"type":"debug", "message":str(self.map)}
-        self.conn.write(json.dumps(map_mes))
-        self.conn.write("\n")
+        #map_mes = {"type":"debug", "message":str(self.map)}
+        #self.conn.write(json.dumps(map_mes))
+        #self.conn.write("\n")
         self.conn.flush()

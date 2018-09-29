@@ -15,19 +15,20 @@ logging.basicConfig(level=logging.DEBUG)
 players = []
 map_size = (10,10)
 tokens = {}
+turn_counter = 0
 
-def addPlayer(conn, num, q):
+def addPlayer(conn, num, q, name):
     logging.info("Player %d joined!" % num)
     token = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
     logging.debug("Player %d's rejoin token is %s" % (num, token))
-    player = Player(conn, num, map_size, q, token)
+    player = Player(conn, num, map_size, q, token, name)
     tokens[token] = player
     players.append(player)
     player.handleForever()
 
 def mainThread(q):
-    finished_players = []
-    turn_counter = 0
+    global turn_counter
+    finished_players = {}
     while True:
         msg = q.get()
         logging.debug("Got message: " + str(msg))
@@ -44,15 +45,12 @@ def mainThread(q):
                     players[msg.player].excavate_result = {'depth': p - msg.player, 'building': match, 'pos': msg.pos}
                     break
         elif isinstance(msg, FinishTurnMessage):
-            finished_players.append((msg.player, msg.score))
+            finished_players[players[msg.player].name] = msg.score
             if len(finished_players) == len(players):
                 turn_counter += 1
-                scores = [0] * len(players)
-                for p in finished_players:
-                    scores[p[0]] = p[1]
-                finished_players = []
                 for p in players:
-                    p.endTurn(scores)
+                    p.endTurn(finished_players)
+                finished_players = []
 
 if __name__ == "__main__":
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -70,13 +68,21 @@ if __name__ == "__main__":
         try:
             sock = conn.makefile(mode='rw')
             client_welcome = json.loads(sock.readline())
-            sock.close()
-            if client_welcome['type'] == 'welcome':
-                t = threading.Thread(target=addPlayer, args=(conn, num, q))
+            if client_welcome['type'] == 'welcome' and turn_counter == 0:
+                sock.close()
+                t = threading.Thread(target=addPlayer, args=(conn, num, q, client_welcome['name']))
                 t.daemon = True
                 t.start()
                 num += 1
+            elif turn_counter > 0:
+                sock.write(json.dumps({'type': 'error', 'message': 'The game is already running'}))
+                sock.write("\n")
+                sock.flush()
+                sock.close()
+                conn.close()
+
             elif client_welcome['type'] == 'rejoin':
+                sock.close()
                 tokens[client_welcome['token']].sock = conn
                 tokens[client_welcome['token']].conn = conn.makefile(mode='rw')
         except:
