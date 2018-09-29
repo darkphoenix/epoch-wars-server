@@ -86,7 +86,33 @@ def mainThread(q):
                 finished_players = {}
                 scores = [0] * len(players)
 
+def adminConsole():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    s.bind(('127.0.0.1', 4242))
+    s.listen(1)
+    while True:
+        conn, addr = s.accept()
+        sock = conn.makefile(mode='rw')   
+        while True:
+            try:
+                sock.write(str(eval(sock.readline(), globals(), locals())) + "\n")
+                sock.flush()
+            except (ConnectionResetError, BrokenPipeError):
+                break
+            except Exception as err:
+                if not sock.closed:
+                    try:
+                        sock.write(str(err) + "\n")
+                        sock.flush()
+                    except:
+                        pass
+
 if __name__ == "__main__":
+    t = threading.Thread(target=adminConsole)
+    t.daemon = True
+    t.start()
+
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.bind(('0.0.0.0', 4200))
