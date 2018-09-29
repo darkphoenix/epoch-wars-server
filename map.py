@@ -38,6 +38,10 @@ class Building():
     def new(name):
         if name.lower() == 'house':
             return House()
+        elif name.lower() == 'villa':
+            return Villa()
+        elif name.lower() == 'tower':
+            return Tower()
         raise UnknownBuildingException(name)
 
     def place(self, fields, pos):
@@ -76,9 +80,9 @@ class Field():
     def __repr__(self):
         if self.building is None:
             if self.blocked:
-                return '╳╳'
+                return '🌲'
             else:
-                return '__'
+                return '░░'
         else:
             return str(self.building)
 
