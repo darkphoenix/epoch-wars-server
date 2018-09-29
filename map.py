@@ -44,8 +44,9 @@ class Building(Enum):
         return self.__repr__()
 
 class Field():
-    building = None
-    blocked = False
+    def __init__(self):
+        self.building = None
+        self.blocked = False
 
     def __repr__(self):
         if self.building is None:
@@ -61,10 +62,9 @@ class Field():
 
 
 class PlayerMap():
-    size = (0, 0)
-    fields = []
 
     def __init__(self, size=(10, 10)):
+        self.fields = []
         self.size = size
         for x in range(size[0]):
             tmp = []
