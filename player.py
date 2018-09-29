@@ -15,9 +15,13 @@ class Player:
         self.excavate_result = None
         self.size = map_size
         self.name = name
+        self.token = token
 
         self.map = PlayerMap(map_size)
-        self.conn.write(json.dumps({'type': 'welcome','player': self.number, 'map_size': map_size, 'rejoin': token}))
+        self.sendWelcome()
+
+    def sendWelcome(self):
+        self.conn.write(json.dumps({'type': 'welcome','player': self.number, 'map_size': self.size, 'rejoin': self.token}))
         self.conn.write("\n")
         self.conn.flush()
 
@@ -59,6 +63,8 @@ class Player:
             except UnknownBuildingException as error:
                 self.conn.write('{"type":"error", "message":"Invalid building type '+ error.name + '"}\n')
                 self.conn.flush()
+            except ValueError:
+                pass
             except Exception as error:
                 logging.error(error)
                 try:

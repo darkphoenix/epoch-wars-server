@@ -36,17 +36,19 @@ def handleConnection(conn):
 
             num += 1
             player.handleForever()
+        elif client_welcome['type'] == 'rejoin':
+            sock.close()
+            logging.debug("Player %d rejoined with a new connection!" %tokens[client_welcome['token']].number)
+            tokens[client_welcome['token']].sock = conn
+            tokens[client_welcome['token']].conn = conn.makefile(mode='rw')
+            tokens[client_welcome['token']].sendWelcome()
+            tokens[client_welcome['token']].endTurn({})
         elif turn_counter > 0:
             sock.write(json.dumps({'type': 'error', 'message': 'The game is already running'}))
             sock.write("\n")
             sock.flush()
             sock.close()
             conn.close()
-
-        elif client_welcome['type'] == 'rejoin':
-            sock.close()
-            tokens[client_welcome['token']].sock = conn
-            tokens[client_welcome['token']].conn = conn.makefile(mode='rw')
     except:
         logging.error("Unexpected error: ", exc_info=True)
 
@@ -74,7 +76,7 @@ def mainThread(q):
                 turn_counter += 1
                 for p in players:
                     p.endTurn(finished_players)
-                finished_players = []
+                finished_players = {}
 
 if __name__ == "__main__":
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
