@@ -61,7 +61,7 @@ class Player:
                     self.conn.write('{"type":"error", "message":"Build action already made this turn", "subtype":"BuildActionAlreadyUsedError"}\n')
                     self.conn.flush()
                 else:
-                    self.conn.write('{"type":"error", "message":"Invalid command"}\n')
+                    self.conn.write('{"type":"error", "message":"Invalid command", "subtype":"InvalidCommandError"}\n')
                     self.conn.flush()
 
             except InvalidBuildException as error:
