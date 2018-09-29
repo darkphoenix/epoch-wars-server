@@ -3,6 +3,7 @@ from map import *
 from message import *
 from time import sleep
 import logging
+from connection_counter import ConnectionCounter
 
 class Player:
     def __init__(self, connection, number, map_size, q, token, name):
@@ -81,6 +82,7 @@ class Player:
                     self.conn.write('{"type":"error", "message":"Internal server error"}\n')
                     self.conn.flush()
                 except:
+                    ConnectionCounter.connectionDied()
                     pass
 
     def endTurn(self, scores):

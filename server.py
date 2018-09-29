@@ -11,6 +11,7 @@ import logging
 import random, string
 import json
 import sys
+from connection_counter import ConnectionCounter
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -43,14 +44,15 @@ def handleConnection(conn):
             players.append(player)
 
             playersList = getPlayers()
-            player.endTurn(playersList)
             for p in players:
                 p.endTurn(playersList)
             num += 1
+            ConnectionCounter.connections += 1
             player.handleForever()
         elif client_welcome['type'] == 'rejoin':
             sock.close()
             if client_welcome['token'] in tokens:
+                ConnectionCounter.connections += 1
                 logging.debug("Player %d rejoined with a new connection!" %tokens[client_welcome['token']].number)
                 tokens[client_welcome['token']].sock = conn
                 tokens[client_welcome['token']].conn = conn.makefile(mode='rw')

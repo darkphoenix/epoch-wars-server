@@ -22,6 +22,9 @@ if __name__ == '__main__':
             for conn in waitlist:
                 conn.sendall(("10.42.0.146:" + str(port) + "\n").encode('utf-8'))
             for conn in waitlist:
-                conn.shutdown(socket.SHUT_RDWR)
-                conn.close()
+                try:
+                    conn.shutdown(socket.SHUT_RDWR)
+                    conn.close()
+                except:
+                    pass
                 waitlist.remove(conn)
