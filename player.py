@@ -5,31 +5,35 @@ from time import sleep
 import logging
 
 class Player:
-    def __init__(self, connection, number, map_size, q):
+    def __init__(self, connection, number, map_size, q, token):
         self.points = 0
         self.q = q
         self.number = number
         self.sock = connection
         self.conn = self.sock.makefile(mode='rw')
         self.turn_over = False
+        self.excavate_result = None
+        self.size = map_size
 
         self.map = PlayerMap(map_size)
-        self.waiting_for_excavate = (-1, -1)
+        self.conn.write(json.dumps({'type': 'welcome','player': self.number, 'map_size': map_size, 'rejoin': token}))
+        self.conn.write("\n")
+        self.conn.flush()
 
     def tower(self, pos):
         self.map.tower(pos)
 
     def handleForever(self):
-        self.conn.write(json.dumps({'type': 'welcome','player': self.number}))
-        self.conn.write("\n")
-        self.conn.flush()
         while True:
             try:
                 command = json.loads(self.conn.readline())
                 if command['type'] == 'excavate':
                     logging.debug("Player " + str(self.number) + " excavated field (" + str(command['x']) + ", " + str(command['y']) + ")")
-                    self.waiting_for_excavate = (command['x'], command['y'])
-
+                    if (command['x'] >= self.size[0]) or (command['y'] >= self.size[1]) or any([(command[i] < 0) for i in ['x','y']]):
+                        self.conn.write('{"type":"error", "message":"Out of bounds"}\n')
+                        self.conn.flush()
+                        continue
+                    self.q.put(ExcavateMessage(self.number, (command['x'], command['y'])))
                 elif command['type'] == 'build' and not self.turn_over:
                     if command['building'] == "tower":
                         logging.debug("Player " + str(self.number) + " built a tower on field (" + str(command['x']) + ", " + str(command['y']) + ")")
@@ -56,24 +60,24 @@ class Player:
                 self.conn.flush()
             except Exception as error:
                 logging.error(error)
-                self.conn.write('{"type":"error", "message":"Invalid JSON"}\n')
-                self.conn.flush()
+                try:
+                    self.conn.write('{"type":"error", "message":"Invalid JSON"}\n')
+                    self.conn.flush()
+                except:
+                    pass
 
     def endTurn(self, scores):
         logging.debug("Current score for player " + str(self.number) + ": " + str(self.points))
         self.map.apply()
         self.turn_over = False
 
-        result_message = {"type":"end_of_turn", "scores": scores, "map": self.map.json()}
+        result_message = {"type":"end_of_turn", "scores": scores, "map": self.map.json(), "excavate_result": self.excavate_result}
         self.conn.write(json.dumps(result_message))
         self.conn.write("\n")
+
+        self.excavate_result = None
 
         map_mes = {"type":"debug", "message":str(self.map)}
         self.conn.write(json.dumps(map_mes))
         self.conn.write("\n")
         self.conn.flush()
-        if self.waiting_for_excavate[0] != -1:
-            self.conn.write(json.dumps({'type':'excavate', 'res': 'Feld ' \
-            + str(self.waiting_for_excavate[0]) + ', ' + str(self.waiting_for_excavate[1]) + ' hat nichts.'}))
-            self.conn.write("\n")
-            self.conn.flush()

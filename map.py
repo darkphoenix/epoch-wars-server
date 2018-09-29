@@ -115,7 +115,7 @@ class PlayerMap():
     def json(self):
         res = []
         for p, b in self.buildings.items():
-            res.append({'x': p[0], 'y': p[1], 'building': type(b).__name__.lower()})
+            res.append({'pos': p, 'building': type(b).__name__.lower()})
         return res
 
     def build(self, pos, building):
@@ -129,13 +129,10 @@ class PlayerMap():
     def excavate(self, pos):
         if any([(pos[i] >= self.size[i]) or (pos[i] < 0) for i in [0, 1]]):
             raise InvalidExcavateException(pos, 'Out of bounds.')
-        res = Field()
         for p, b in self.buildings.items():
             if all([abs(p[i] - pos[i]) <= b.radius for i in [0,1]]):
-                res.blocked = True
-            if all([abs(p[i] - pos[i]) == 0 for i in [0,1]]):
-                res.building = b
-        return res
+                return b
+        return None
 
     def tower(self, pos):
         if any([(pos[i] >= self.size[i]) or (pos[i] < 0) for i in [0, 1]]):
