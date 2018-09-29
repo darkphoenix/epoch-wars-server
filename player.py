@@ -2,9 +2,11 @@ import json
 from turn import Turn
 from map import *
 from message import *
+from time import sleep
 
 class Player:
     def __init__(self, connection, number, map_size, q):
+        self.points = 0
         self.q = q
         self.number = number
         self.sock = connection
@@ -20,6 +22,8 @@ class Player:
     def handleForever(self):
         while True:
             try:
+                self.points += self.map.points()
+                print(self.number, self.points)
                 command = json.loads(self.conn.readline())
                 if command['type'] == 'excavate':
                     print("Excavate!")
@@ -32,6 +36,7 @@ class Player:
                     else:
                         self.map.build((command['x'], command['y']), Building.new(command['building']))
                     Turn.wait_for_end()
+                    sleep(0.05) # TODO better solution for waiting for possible towers
                     self.conn.write(str(self.map))
                     self.conn.write("\n")
                     self.conn.flush()

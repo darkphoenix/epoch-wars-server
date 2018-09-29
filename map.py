@@ -139,3 +139,6 @@ class PlayerMap():
         for p in remove:
             del self.buildings[p]
         self.build(pos, Tower())
+
+    def points(self):
+        return sum(map(lambda x: x.points, self.buildings.values()))
