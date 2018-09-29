@@ -2,6 +2,7 @@
 
 import socket
 import threading
+import _thread
 from player import Player
 from queue import Queue, Empty
 from message import *
@@ -9,6 +10,7 @@ import copy
 import logging
 import random, string
 import json
+import sys
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -17,6 +19,12 @@ map_size = (10,10)
 tokens = {}
 turn_counter = 0
 num = 0
+
+def getPlayers():
+    res = []
+    for p in players:
+        res.append({'name': p.name, 'score': p.points})
+    return res
 
 def handleConnection(conn):
     global num
@@ -34,6 +42,10 @@ def handleConnection(conn):
             tokens[token] = player
             players.append(player)
 
+            playersList = getPlayers()
+            player.endTurn(playersList)
+            for p in players:
+                p.endTurn(playersList)
             num += 1
             player.handleForever()
         elif client_welcome['type'] == 'rejoin':
@@ -43,7 +55,7 @@ def handleConnection(conn):
                 tokens[client_welcome['token']].sock = conn
                 tokens[client_welcome['token']].conn = conn.makefile(mode='rw')
                 tokens[client_welcome['token']].sendWelcome()
-                tokens[client_welcome['token']].endTurn({})
+                tokens[client_welcome['token']].endTurn(getPlayers())
             else:
                 conn.close()
         elif turn_counter > 0:
@@ -84,12 +96,16 @@ def mainThread(q):
                 for p in players:
                     p.endTurn(scores)
                 finished_players = {}
+                if turn_counter == 20:
+                    for p in players:
+                        p.conn.write(json.dumps({"type": "game_over", "message": "Das Spiel ist vorbei.", "score": msg.score}))
+                    _thread.interrupt_main()
                 scores = [0] * len(players)
 
 def adminConsole():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    s.bind(('127.0.0.1', 4242))
+    s.bind(('127.0.0.1', int(sys.argv[1]) + 42))
     s.listen(1)
     while True:
         conn, addr = s.accept()
@@ -115,15 +131,19 @@ if __name__ == "__main__":
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    s.bind(('0.0.0.0', 4200))
+    s.bind(('0.0.0.0', int(sys.argv[1])))
     s.listen(1)
+    s.settimeout(10)
     q = Queue()
     t = threading.Thread(target=mainThread, args=(q,))
     t.daemon = True
     t.start()
 
     while True:
-        conn, addr = s.accept()
-        t = threading.Thread(target=handleConnection, args=(conn,))
-        t.daemon = True
-        t.start()
+        try:
+            conn, addr = s.accept()
+            t = threading.Thread(target=handleConnection, args=(conn,))
+            t.daemon = True
+            t.start()
+        except socket.timeout:
+            pass
