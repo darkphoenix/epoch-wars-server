@@ -61,7 +61,7 @@ def handleConnection(conn):
             else:
                 conn.close()
         elif turn_counter > 0:
-            sock.write(json.dumps({'type': 'error', 'message': 'The game is already running'}))
+            sock.write(json.dumps({'type': 'error', 'message': 'The game is already running', 'subtype': 'GameAlreadyRunning'}))
             sock.write("\n")
             sock.flush()
             sock.close()

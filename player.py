@@ -36,7 +36,7 @@ class Player:
                 if command['type'] == 'excavate':
                     logging.debug("Player " + str(self.number) + " excavated field (" + str(command['x']) + ", " + str(command['y']) + ")")
                     if (command['x'] >= self.size[0]) or (command['y'] >= self.size[1]) or any([(command[i] < 0) for i in ['x','y']]):
-                        self.conn.write('{"type":"error", "message":"Out of bounds"}\n')
+                        self.conn.write('{"type":"error", "message":"Out of bounds", "subtype":"ExcavateOutOfBoundsError"}\n')
                         self.conn.flush()
                         continue
                     self.q.put(ExcavateMessage(self.number, (command['x'], command['y'])))
