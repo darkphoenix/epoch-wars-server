@@ -16,15 +16,39 @@ players = []
 map_size = (10,10)
 tokens = {}
 turn_counter = 0
+num = 0
 
-def addPlayer(conn, num, q, name):
-    logging.info("Player %d joined!" % num)
-    token = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
-    logging.debug("Player %d's rejoin token is %s" % (num, token))
-    player = Player(conn, num, map_size, q, token, name)
-    tokens[token] = player
-    players.append(player)
-    player.handleForever()
+def handleConnection(conn):
+    global num
+    try:
+        sock = conn.makefile(mode='rw')
+        client_welcome = json.loads(sock.readline())
+        if client_welcome['type'] == 'welcome' and turn_counter == 0:
+            sock.close()
+
+            logging.info("Player %d joined!" % num)
+            token = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
+            logging.debug("Player %d's rejoin token is %s" % (num, token))
+
+            player = Player(conn, num, map_size, q, token, client_welcome['name'])
+            tokens[token] = player
+            players.append(player)
+
+            num += 1
+            player.handleForever()
+        elif turn_counter > 0:
+            sock.write(json.dumps({'type': 'error', 'message': 'The game is already running'}))
+            sock.write("\n")
+            sock.flush()
+            sock.close()
+            conn.close()
+
+        elif client_welcome['type'] == 'rejoin':
+            sock.close()
+            tokens[client_welcome['token']].sock = conn
+            tokens[client_welcome['token']].conn = conn.makefile(mode='rw')
+    except:
+        logging.error("Unexpected error: ", exc_info=True)
 
 def mainThread(q):
     global turn_counter
@@ -62,28 +86,8 @@ if __name__ == "__main__":
     t.daemon = True
     t.start()
 
-    num = 0
     while True:
         conn, addr = s.accept()
-        try:
-            sock = conn.makefile(mode='rw')
-            client_welcome = json.loads(sock.readline())
-            if client_welcome['type'] == 'welcome' and turn_counter == 0:
-                sock.close()
-                t = threading.Thread(target=addPlayer, args=(conn, num, q, client_welcome['name']))
-                t.daemon = True
-                t.start()
-                num += 1
-            elif turn_counter > 0:
-                sock.write(json.dumps({'type': 'error', 'message': 'The game is already running'}))
-                sock.write("\n")
-                sock.flush()
-                sock.close()
-                conn.close()
-
-            elif client_welcome['type'] == 'rejoin':
-                sock.close()
-                tokens[client_welcome['token']].sock = conn
-                tokens[client_welcome['token']].conn = conn.makefile(mode='rw')
-        except:
-             logging.error("Unexpected error: ", exc_info=True)
+        t = threading.Thread(target=handleConnection, args=(conn,))
+        t.daemon = True
+        t.start()
