@@ -1,15 +1,21 @@
 import json
 from turn import Turn
 from map import *
+from message import *
 
 class Player:
-    def __init__(self, connection, map_size):
+    def __init__(self, connection, number, map_size, q):
+        self.q = q
+        self.number = number
         self.sock = connection
         self.conn = self.sock.makefile(mode='rw')
         Turn.players += 1
 
         self.map = PlayerMap(map_size)
         self.waiting_for_excavate = (-1, -1)
+
+    def tower(self, pos):
+        print(pos)
 
     def handleForever(self):
         while True:
@@ -21,7 +27,8 @@ class Player:
 
                 elif command['type'] == 'build':
                     if command['building'] == "tower":
-                        pass
+                        self.map.build((command['x'], command['y']), Building.new(command['building']))
+                        self.q.put(TowerMessage(self.number, (command['x'], command['y'])))
                     else:
                         self.map.build((command['x'], command['y']), Building.new(command['building']))
                     Turn.wait_for_end()
