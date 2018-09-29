@@ -36,7 +36,7 @@ class Player:
                 if command['type'] == 'excavate':
                     logging.debug("Player " + str(self.number) + " excavated field (" + str(command['x']) + ", " + str(command['y']) + ")")
                     if (command['x'] >= self.size[0]) or (command['y'] >= self.size[1]) or any([(command[i] < 0) for i in ['x','y']]):
-                        self.conn.write('{"type":"error", "message":"Out of bounds", "subtype":"ExcavateOutOfBoundsError"}\n')
+                        self.conn.write('{"type":"error", "message":"Out of bounds", "subtype":"InvalidExcavateError"}\n')
                         self.conn.flush()
                         continue
                     self.q.put(ExcavateMessage(self.number, (command['x'], command['y'])))
@@ -58,28 +58,28 @@ class Player:
                     self.q.put(FinishTurnMessage(self.number, self.points))
                     self.turn_over = True
                 elif self.turn_over:
-                    self.conn.write('{"type":"error", "message":"Build action already made this turn"}\n')
+                    self.conn.write('{"type":"error", "message":"Build action already made this turn", "subtype":"BuildActionAlreadyUsedError"}\n')
                     self.conn.flush()
                 else:
                     self.conn.write('{"type":"error", "message":"Invalid command"}\n')
                     self.conn.flush()
 
             except InvalidBuildException as error:
-                self.conn.write('{"type":"error", "message":"' + str(error) + '"}\n')
+                self.conn.write('{"type":"error", "message":"' + str(error) + '", "subtype":"InvalidBuildError"}\n')
                 self.conn.flush()
             except UnknownBuildingException as error:
-                self.conn.write('{"type":"error", "message":"Invalid building type '+ error.name + '"}\n')
+                self.conn.write('{"type":"error", "message":"Invalid building type '+ error.name + '", "subtype":"UnknownBuildingError"}\n')
                 self.conn.flush()
             except ValueError:
                 try:
-                    self.conn.write('{"type":"error", "message":"Invalid JSON"}\n')
+                    self.conn.write('{"type":"error", "message":"Invalid JSON", "subtype":"InvalidJSONError"}\n')
                     self.conn.flush()
                 except:
                     pass
             except Exception as error:
                 logging.error(error)
                 try:
-                    self.conn.write('{"type":"error", "message":"Internal server error"}\n')
+                    self.conn.write('{"type":"error", "message":"Internal server error", "subtype":"InternalServerError"}\n')
                     self.conn.flush()
                 except:
                     ConnectionCounter.connectionDied()
