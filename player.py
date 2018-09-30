@@ -58,7 +58,9 @@ class Player:
                     self.q.put(FinishTurnMessage(self.number, self.points))
                     self.turn_over = True
                 elif self.turn_over:
-                    self.conn.write('{"type":"error", "message":"Build action already made this turn", "subtype":"BuildActionAlreadyUsedError"}\n')
+                    self.conn.write(json.dumps({"type":"error", "message":"Build action already made this turn", "subtype":"BuildActionAlreadyUsedError",\
+                    "pos": self.map.turn_buildings[0][0], "building": type(self.map.turn_buildings[0][1]).__name__.lower()}))
+                    self.conn.write("\n")
                     self.conn.flush()
                 else:
                     self.conn.write('{"type":"error", "message":"Invalid command", "subtype":"InvalidCommandError"}\n')

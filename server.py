@@ -149,3 +149,7 @@ if __name__ == "__main__":
             t.start()
         except socket.timeout:
             pass
+        except KeyboardInterrupt:
+            logging.info("Exiting.")
+            s.close()
+            break
