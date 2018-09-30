@@ -18,6 +18,7 @@ class Player:
         self.name = name
         self.token = token
         self.tower_count = 5
+        self.dead = False
 
         self.map = PlayerMap(map_size)
         self.sendWelcome()
@@ -94,7 +95,9 @@ class Player:
                     self.conn.write('{"type":"error", "message":"Invalid JSON", "subtype":"InvalidJSONError"}\n')
                     self.conn.flush()
                 except:
-                    pass
+                    if not self.dead:
+                        ConnectionCounter.connectionDied()
+                        self.dead = True
             except Exception as error:
                 logging.error(error)
                 try:
@@ -102,7 +105,6 @@ class Player:
                     self.conn.flush()
                 except:
                     ConnectionCounter.connectionDied()
-                    pass
 
     def endTurn(self, scores, turn):
         logging.debug("Current score for player " + str(self.number) + ": " + str(self.points))
