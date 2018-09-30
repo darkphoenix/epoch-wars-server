@@ -74,6 +74,7 @@ class Villa(Building):
         return '🏡'
 
 class Tower(Building):
+    base_price = 10
     def __str__(self):
         return '🏯'
 

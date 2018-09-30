@@ -17,6 +17,7 @@ class Player:
         self.size = map_size
         self.name = name
         self.token = token
+        self.tower_count = 5
 
         self.map = PlayerMap(map_size)
         self.sendWelcome()
@@ -42,14 +43,27 @@ class Player:
                     self.q.put(ExcavateMessage(self.number, (command['x'], command['y'])))
                 elif command['type'] == 'build' and not self.turn_over:
                     if command['building'] == "tower":
-                        logging.debug("Player " + str(self.number) + " built a tower on field (" + str(command['x']) + ", " + str(command['y']) + ")")
-                        self.map.build((command['x'], command['y']), Building.new(command['building']))
-                        self.q.put(TowerMessage(self.number, (command['x'], command['y'])))
+                        if self.tower_count > 0 and self.points - Tower.base_price >= 0:
+                            self.points -= Tower.base_price
+                            self.tower_count -= 1
+                            logging.debug("Player " + str(self.number) + " built a tower on field (" + str(command['x']) + ", " + str(command['y']) + ")")
+                            self.map.build((command['x'], command['y']), Building.new(command['building']))
+                            self.q.put(TowerMessage(self.number, (command['x'], command['y'])))
+                        elif self.tower_count > 0:
+                            self.conn.write('{"type":"error", "message":"You can\'t afford that!", "subtype":"InvalidBuildError"}\n')
+                            self.conn.flush()
+                        else:
+                            self.conn.write('{"type":"error", "message":"You can\'t build another tower!", "subtype":"InvalidBuildError"}\n')
+                            self.conn.flush()
                     else:
-                        self.map.build((command['x'], command['y']), Building.new(command['building']))
                         building_count = len(list(filter(lambda x: type(x).__name__.lower() == command['building'].lower(), self.map.buildings.values())))
-                        self.points -= Building.new(command['building']).get_price(building_count)
-                        logging.debug("Player " + str(self.number) + " built a " + command['building'] + " on field (" + str(command['x']) + ", " + str(command['y']) + ")")
+                        if self.points - Building.new(command['building']).get_price(building_count) >= 0:
+                            self.map.build((command['x'], command['y']), Building.new(command['building']))
+                            self.points -= Building.new(command['building']).get_price(building_count)
+                            logging.debug("Player " + str(self.number) + " built a " + command['building'] + " on field (" + str(command['x']) + ", " + str(command['y']) + ")")
+                        else:
+                            self.conn.write('{"type":"error", "message":"You can\'t afford that!", "subtype":"InvalidBuildError"}\n')
+                            self.conn.flush()
                     self.points += self.map.points()
                     self.q.put(FinishTurnMessage(self.number, self.points))
                     self.turn_over = True
