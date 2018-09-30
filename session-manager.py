@@ -21,9 +21,9 @@ def getPort():
         return port
 
 if __name__ == '__main__':
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    s.bind(('0.0.0.0', 4200))
+    s.bind(('', 4200))
     s.listen(1)
 
     waitlist = []

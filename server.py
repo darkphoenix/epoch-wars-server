@@ -36,7 +36,7 @@ def handleConnection(conn):
             sock.close()
 
             logging.info("Player %d joined!" % num)
-            token = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
+            token = ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for _ in range(16))
             logging.debug("Player %d's rejoin token is %s" % (num, token))
 
             player = Player(conn, num, map_size, q, token, client_welcome['name'])
