@@ -96,7 +96,7 @@ def mainThread(q):
             if len(finished_players) == len(players):
                 turn_counter += 1
                 for p in players:
-                    p.endTurn(scores, turn)
+                    p.endTurn(scores, turn_counter)
                 finished_players = {}
                 if turn_counter == 20:
                     for p in players:
