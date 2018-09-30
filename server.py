@@ -45,7 +45,7 @@ def handleConnection(conn):
 
             playersList = getPlayers()
             for p in players:
-                p.endTurn(playersList)
+                p.endTurn(playersList, turn_counter)
             num += 1
             ConnectionCounter.connections += 1
             player.handleForever()
@@ -57,7 +57,7 @@ def handleConnection(conn):
                 tokens[client_welcome['token']].sock = conn
                 tokens[client_welcome['token']].conn = conn.makefile(mode='rw')
                 tokens[client_welcome['token']].sendWelcome()
-                tokens[client_welcome['token']].endTurn(getPlayers())
+                tokens[client_welcome['token']].endTurn(getPlayers(), turn_counter)
             else:
                 conn.close()
         elif turn_counter > 0:
@@ -96,11 +96,13 @@ def mainThread(q):
             if len(finished_players) == len(players):
                 turn_counter += 1
                 for p in players:
-                    p.endTurn(scores)
+                    p.endTurn(scores, turn)
                 finished_players = {}
                 if turn_counter == 20:
                     for p in players:
-                        p.conn.write(json.dumps({"type": "game_over", "message": "Das Spiel ist vorbei.", "score": msg.score}))
+                        p.conn.write(json.dumps({"type": "game_over", "message": "GAME OVER", "score": msg.score}))
+                        p.conn.write("\n")
+                        p.conn.flush()
                     _thread.interrupt_main()
                 scores = [0] * len(players)
 

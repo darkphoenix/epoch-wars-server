@@ -87,12 +87,12 @@ class Player:
                     ConnectionCounter.connectionDied()
                     pass
 
-    def endTurn(self, scores):
+    def endTurn(self, scores, turn):
         logging.debug("Current score for player " + str(self.number) + ": " + str(self.points))
         self.map.apply()
         self.turn_over = False
 
-        result_message = {"type":"end_of_turn", "scores": scores, "map": self.map.json(), "excavate_result": self.excavate_result}
+        result_message = {"type":"end_of_turn", "scores": scores, "map": self.map.json(), "excavate_result": self.excavate_result, "turn": turn}
         self.conn.write(json.dumps(result_message))
         self.conn.write("\n")
 
