@@ -77,6 +77,8 @@ class Tower(Building):
     base_price = 10
     def __str__(self):
         return '🏯'
+    def get_price(self, count):
+        return self.base_price
 
 class Field():
     def __init__(self):

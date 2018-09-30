@@ -52,9 +52,11 @@ class Player:
                         elif self.tower_count > 0:
                             self.conn.write('{"type":"error", "message":"You can\'t afford that!", "subtype":"InvalidBuildError"}\n')
                             self.conn.flush()
+                            continue
                         else:
                             self.conn.write('{"type":"error", "message":"You can\'t build another tower!", "subtype":"InvalidBuildError"}\n')
                             self.conn.flush()
+                            continue
                     else:
                         building_count = len(list(filter(lambda x: type(x).__name__.lower() == command['building'].lower(), self.map.buildings.values())))
                         if self.points - Building.new(command['building']).get_price(building_count) >= 0:
@@ -64,6 +66,7 @@ class Player:
                         else:
                             self.conn.write('{"type":"error", "message":"You can\'t afford that!", "subtype":"InvalidBuildError"}\n')
                             self.conn.flush()
+                            continue
                     self.points += self.map.points()
                     self.q.put(FinishTurnMessage(self.number, self.points))
                     self.turn_over = True
@@ -106,7 +109,12 @@ class Player:
         self.map.apply()
         self.turn_over = False
 
-        result_message = {"type":"end_of_turn", "scores": scores, "map": self.map.json(), "excavate_result": self.excavate_result, "turn": turn}
+        current_prices = {}
+        for b in ['house','villa','tower']:
+            building_count = len(list(filter(lambda x: type(x).__name__.lower() == b, self.map.buildings.values())))
+            current_prices[b] = Building.new(b).get_price(building_count)
+        result_message = {"type":"end_of_turn", "scores": scores, "map": self.map.json(), "excavate_result": self.excavate_result, "turn": turn,\
+        "current_prices": current_prices, "tower_count": self.tower_count}
         self.conn.write(json.dumps(result_message))
         self.conn.write("\n")
 
